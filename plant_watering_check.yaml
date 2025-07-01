@@ -1,0 +1,65 @@
+blueprint:
+  name: Multi-Plant Moisture Check
+  description: |
+    At a set time, this blueprint checks moisture sensors of multiple plants and sends notifications
+    to selected mobile devices if any plant needs watering.
+  domain: automation
+  input:
+    plants:
+      name: Plant Sensors
+      description: List of plants and their corresponding moisture sensors
+      default: []
+      selector:
+        object:
+    notify_devices:
+      name: Mobile Devices
+      description: Devices to notify
+      selector:
+        device:
+          multiple: true
+          integration: mobile_app
+    threshold:
+      name: Moisture Threshold (%)
+      description: Moisture level below which the plant needs watering
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+    notify_time:
+      name: Notification Time
+      default: "05:00:00"
+      selector:
+        time:
+
+trigger:
+  - platform: time
+    at: !input notify_time
+
+variables:
+  threshold: !input threshold
+  plants: !input plants
+  notify_devices: !input notify_devices
+
+action:
+  - repeat:
+      for_each: "{{ plants }}"
+      sequence:
+        - variables:
+            moisture: "{{ states(repeat.item.sensor) | float(100) }}"
+            plant_name: "{{ repeat.item.name }}"
+        - condition: template
+          value_template: "{{ moisture < threshold }}"
+        - repeat:
+            for_each: "{{ notify_devices }}"
+            sequence:
+              - service: >-
+                  notify.mobile_app_{{ device_attr(repeat.item, 'name') | lower | replace(' ', '_') }}
+                data:
+                  message: "{{ plant_name }} needs watering! (Moisture: {{ moisture }}%)"
+                  data:
+                    tag: "{{ plant_name | lower | replace(' ', '_') }}-watering"
+
+mode: single
