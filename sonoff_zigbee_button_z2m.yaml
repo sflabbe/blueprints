@@ -5,7 +5,7 @@ blueprint:
   input:
     remote_name:
       name: (Zigbee2MQTT) Remote Name
-      description: "The name of the controller (e.g. sonoff_button). **Choose if you are using Zigbee2MQTT.**"
+      description: "The name of the controller (e.g. sonoff_button)."
       default: ''
     base_topic:
       name: (Zigbee2MQTT) Base mqtt topic
