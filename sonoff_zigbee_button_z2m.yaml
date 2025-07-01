@@ -1,0 +1,82 @@
+blueprint:
+  name: Sonoff Zigbee Button
+  description: Setup actions for three functions of the SONOFF Zigbee button with Press, Double Press, and Hold.
+  domain: automation
+  input:
+    remote_name:
+      name: (Zigbee2MQTT) Remote Name
+      description: "The name of the controller (e.g. sonoff_button). **Choose if you are using Zigbee2MQTT.**"
+      default: ''
+    base_topic:
+      name: (Zigbee2MQTT) Base mqtt topic
+      description: "The topic configured in Zigbee2MQTT (default is usually `zigbee2mqtt`)"
+      default: zigbee2mqtt
+    mode:
+      name: Automation mode
+      description: Controls behavior on multiple triggers.
+      default: single
+      selector:
+        select:
+          options:
+            - single
+            - restart
+            - queued
+            - parallel
+          sort: false
+          multiple: false
+          custom_value: false
+    press_action:
+      name: Press Action
+      description: "Action to perform on Press (payload: `single`)"
+      default: []
+      selector:
+        action: {}
+    double_press_action:
+      name: Double Press Action
+      description: "Action to perform on Double Press (payload: `double`)"
+      default: []
+      selector:
+        action: {}
+    hold_action:
+      name: Hold Action
+      description: "Action to perform on Hold (payload: `long`)"
+      default: []
+      selector:
+        action: {}
+  source_url: https://github.com/sflabbe/blueprints/blob/main/sonoff_zigbee_button_z2m.yaml
+
+trigger_variables:
+  z2m_base_topic: !input base_topic
+  z2m_controller: !input remote_name
+
+mode: !input mode
+max_exceeded: silent
+
+trigger:
+  - platform: mqtt
+    topic: '{{ z2m_base_topic }}/{{ z2m_controller }}/action'
+    payload: 'single'
+    id: press
+  - platform: mqtt
+    topic: '{{ z2m_base_topic }}/{{ z2m_controller }}/action'
+    payload: 'double'
+    id: double_press
+  - platform: mqtt
+    topic: '{{ z2m_base_topic }}/{{ z2m_controller }}/action'
+    payload: 'long'
+    id: hold
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: press
+        sequence: !input press_action
+      - conditions:
+          - condition: trigger
+            id: double_press
+        sequence: !input double_press_action
+      - conditions:
+          - condition: trigger
+            id: hold
+        sequence: !input hold_action
