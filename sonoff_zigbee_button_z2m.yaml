@@ -1,6 +1,6 @@
 blueprint:
-  name: Sonoff Zigbee Button
-  description: Setup actions for three functions of the SONOFF Zigbee button with Press, Double Press, and Hold.
+  name: Sonoff Zigbee Button Zigbee2MQTT
+  description: Setup actions for three functions of the SONOFF Zigbee button with Press, Double Press, and Hold adapted for Zigbee2MQTT
   domain: automation
   input:
     remote_name:
