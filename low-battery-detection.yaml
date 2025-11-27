@@ -1,0 +1,127 @@
+blueprint:
+  name: Low battery level detection & notification for all battery sensors
+  description: |
+    Regularly test all sensors with 'battery' device-class for crossing a certain battery level threshold and execute an action.
+    Compatible with Zigbee2MQTT 2.6.3-1 and Home Assistant Core 2025.11.3.
+    Includes enhanced filtering and area/floor information support.
+  domain: automation
+  input:
+    threshold:
+      name: Battery warning level threshold
+      description: Battery sensors below threshold are assumed to be low-battery (as well as binary battery sensors with value 'on').
+      default: 20
+      selector:
+        number:
+          min: 5.0
+          max: 100.0
+          unit_of_measurement: '%'
+          mode: slider
+          step: 5.0
+    time:
+      name: Time to test on
+      description: Test is run at configured time
+      default: '10:00:00'
+      selector:
+        time: {}
+    day:
+      name: Weekday to test on
+      description: 'Test is run at configured time either everyday (0) or on a given weekday (1: Monday ... 7: Sunday)'
+      default: 0
+      selector:
+        number:
+          min: 0.0
+          max: 7.0
+          mode: slider
+          step: 1.0
+    exclude:
+      name: Excluded Sensors
+      description: Battery sensors (e.g. smartphone) to exclude from detection. Only entities are supported, devices must be expanded!
+      default: {entity_id: []}
+      selector:
+        target:
+          entity:
+            device_class: battery
+    include_area:
+      name: Include area information
+      description: Add area and floor information to sensor names in notifications
+      default: false
+      selector:
+        boolean: {}
+    actions:
+      name: Actions
+      description: Notifications or similar to be run. {{sensors}} is replaced with the names of sensors being low on battery.
+      selector:
+        action: {}
+  source_url: https://gist.github.com/sbyx/1f6f434f0903b872b84c4302637d0890
+
+variables:
+  day: !input day
+  threshold: !input threshold
+  exclude: !input exclude
+  include_area: !input include_area
+  sensors: >-
+    {% set result = namespace(sensors=[]) %}
+    
+    {# 1. Handle Percentage Battery Sensors #}
+    {% set battery_sensors = states.sensor 
+      | selectattr('attributes.device_class', 'defined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      
+    {% for state in battery_sensors %}
+      {% if state.entity_id not in exclude.entity_id and state.state not in ['unavailable', 'unknown'] %}
+        {% if 0 <= state.state | int(-1) < threshold | int %}
+          {% set sensor_info = state.name %}
+          {% if include_area %}
+            {% set area = area_name(state.entity_id) %}
+            {% set floor = floor_name(state.entity_id) %}
+            {% if floor %}
+              {% set sensor_info = sensor_info ~ ' [' ~ floor ~ '/' ~ area ~ ']' %}
+            {% elif area %}
+              {% set sensor_info = sensor_info ~ ' [' ~ area ~ ']' %}
+            {% endif %}
+          {% endif %}
+          {% set sensor_info = sensor_info ~ ' (' ~ state.state ~ '%)' %}
+          {% set result.sensors = result.sensors + [sensor_info] %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    
+    {# 2. Handle Binary Battery Sensors (Low Battery = On) #}
+    {% set binary_battery_sensors = states.binary_sensor 
+      | selectattr('attributes.device_class', 'defined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      
+    {% for state in binary_battery_sensors %}
+      {% if state.entity_id not in exclude.entity_id and state.state not in ['unavailable', 'unknown'] %}
+        {% if state.state == 'on' %}
+          {% set sensor_info = state.name %}
+          {% if include_area %}
+            {% set area = area_name(state.entity_id) %}
+            {% set floor = floor_name(state.entity_id) %}
+            {% if floor %}
+              {% set sensor_info = sensor_info ~ ' [' ~ floor ~ '/' ~ area ~ ']' %}
+            {% elif area %}
+              {% set sensor_info = sensor_info ~ ' [' ~ area ~ ']' %}
+            {% endif %}
+          {% endif %}
+          {% set result.sensors = result.sensors + [sensor_info] %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    
+    {{ result.sensors | join(', ') }}
+
+trigger:
+  - platform: time
+    at: !input time
+
+condition:
+  - condition: template
+    value_template: "{{ sensors != '' and (day | int == 0 or day | int == now().isoweekday()) }}"
+
+action:
+  - choose:
+      - conditions: "{{ sensors != '' }}"
+        sequence: !input actions
+
+mode: single
