@@ -47,4 +47,4 @@ The `{{sensors}}` variable will contain a comma-separated list of low battery se
 Living Room Motion Sensor [Ground Floor/Living Room] (15%), Kitchen Door Sensor (12%)
 ```
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsflabbe%2Fblueprints%2Fblob%2Fmain%2Flow_battery_detection.yaml)
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fsflabbe%2Fblueprints%2Fblob%2Fmain%2Flow-battery-detection.yaml)
