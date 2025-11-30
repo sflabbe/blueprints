@@ -1,5 +1,5 @@
 # blueprints
-Blueprint collection for Home Assistant. Sonoff Zigbee Button forked and adapted for z2m from apollo1220/blueprints.
+Blueprint collection for Home Assistant.
 
 ## Sonoff Zigbee Button Zigbee2MQTT
 Provide the device of the button running on Zigbee2MQTT and what you want to happen on press, double press and hold.
